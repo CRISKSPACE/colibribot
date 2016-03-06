@@ -45,7 +45,7 @@ for key, value in dico.iteritems():
 	value[1] = compare_photo(value[0],newest)
 	fichier_log.write('Difference avec %r : %r \n' % (key,value[1]))
 
-#determination de la photo de reference la plus proche
+#determine la photo de reference la plus proche
 current_rate = 100.0
 current_status = "status inconnu ..."
 for key, value in dico.iteritems():
