@@ -24,12 +24,13 @@ def compare_photo(image1,image2) :
 
 #liste de photo de references
 dico = {}
-dico["absent"] = ["/home/pi/colibri/ref_parti_oeuf.jpg",100.0]
-dico["couve face"] = ["/home/pi/colibri/ref_couve_face.jpg",100.0]
-dico["nuit"] = ["/home/pi/colibri/ref_nuit.jpg",100.0]
-dico["couve dos"] = ["/home/pi/colibri/ref_couve_dos.jpg",100.0]
-dico["repas"] = ["/home/pi/colibri/ref_repas.jpg",100.0]
-dico["fly"] = ["/home/pi/colibri/ref_fly.jpg",100.0]
+dico["absent"] = ["/home/pi/colibri/ref_parti_oeuf",100.0]
+dico["couve face"] = ["/home/pi/colibri/ref_couve_face",100.0]
+dico["nuit"] = ["/home/pi/colibri/ref_nuit",100.0]
+dico["couve dos"] = ["/home/pi/colibri/ref_couve_dos",100.0]
+dico["repas"] = ["/home/pi/colibri/ref_repas",100.0]
+dico["fly"] = ["/home/pi/colibri/ref_fly",100.0]
+dico["echauf"] = ["/home/pi/colibri/ref_echauf",100.0]
 
 #ouverture fichier de log
 fichier_log = open("/home/pi/colibri/colibri_log.txt", "a")
@@ -42,10 +43,14 @@ fichier_log.write('Image en cours d\'analyse :%r\n' % newest)
 
 #comparer la photo avec la banque de references
 for key, value in dico.iteritems():
-	value[1] = compare_photo(value[0],newest)
-	fichier_log.write('Difference avec %r : %r \n' % (key,value[1]))
-
-#determine la photo de reference la plus proche
+	for element in os.listdir(value[0]):
+		if element.endswith('.jpg'):
+			value_tmp = compare_photo(value[0] + "/" + element,newest)
+			fichier_log.write('Difference avec %r : %r \n' % (key,value_tmp))
+			if value_tmp < value[1]:
+				value[1] = value_tmp
+	
+#determination de la photo de reference la plus proche
 current_rate = 100.0
 current_status = "status inconnu ..."
 for key, value in dico.iteritems():
@@ -71,7 +76,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	fichier_log.write("sauvegarde d'un nouveau status\n")
 	fichier_historique = open("/home/pi/colibri/colibri_status_historique.txt", "a")
 	fichier_historique.close()
-	#twitter (a remplir)
+	#twitter
 	CONSUMER_KEY = ''
 	CONSUMER_SECRET = ''
 	ACCESS_KEY = ''
@@ -85,6 +90,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions_nuit = {}
 	transitions_repas = {}
 	transitions_fly = {}
+	transitions_echauf = {}
 
 	# -> couve face
 	transitions_absent	["couve face"]=["De retour au nid, il faut bien prôtéger mes deux petits oisillons #bot",
@@ -92,7 +98,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 						"Je suis parti longtemps ? #bot",
 						"Un petit nid douillet #bot #humour",
 						"C'est quoi cette grosse boule noire qui me regarde ? #bot #suspicieux",
-						"Il parait que l'on ai observé ... #bot"]
+						"Il parait que l'on est observé ... #bot"]
 	transitions_couve_dos	["couve face"]=["Allez on change de côté #bot",
 						"Retour à mon meilleur profil ! #bot"]
 	transitions_nuit	["couve face"]=["Une nouvelle journée commence ! #bot",
@@ -102,6 +108,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions_fly		["couve face"]=["Atterissage maîtrisé ... #bot #artofflight",
 					        "J'arriiiiiiive #bot",
 					        "Colibri, vous avez l'autorisation d'atterrir, roger #bot"]
+	transitions_echauf	["couve face"]=transitions_fly		["couve face"]
 
 	
 	# -> couve dos
@@ -111,6 +118,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions_nuit	["couve dos"]=transitions_nuit["couve face"]
 	transitions_repas	["couve dos"]=transitions_repas["couve face"]
 	transitions_fly		["couve dos"]=transitions_fly["couve face"]
+	transitions_echauf	["couve dos"]=transitions_fly["couve face"]
 
 	# -> nuit
 	transitions_absent	["nuit"]=["Bonne nuit ! #bot",
@@ -120,6 +128,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions_couve_dos	["nuit"]=transitions_absent["nuit"]
 	transitions_repas	["nuit"]=transitions_absent["nuit"]
 	transitions_fly		["nuit"]=transitions_fly["couve face"]
+	transitions_echauf	["nuit"]=transitions_absent["nuit"]
 
 	# -> absent
 	transitions_couve_dos	["absent"]=["Regardez mes deux petits #colibri, ils sont pas mignons ? #bot #nouvellemaman",
@@ -133,6 +142,8 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 					    "Prenez un peu l'air il fait si chaud #bot #tropiques"]
 	transitions_fly		["absent"]=["I believe I can fly ! #bot",
 					    "Décollage ! #bot"]
+	transitions_echauf	["absent"]=["Petite sieste après un peu de sport ... #bot",
+					    "On commence à être à l'étroit ici ... #bot"]
 	
 	# -> fly
 	transitions_absent	["fly"]=transitions_fly["couve face"]
@@ -140,6 +151,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions_couve_dos	["fly"]=transitions_fly["couve face"]
 	transitions_nuit	["fly"]=transitions_fly["couve face"]
 	transitions_repas	["fly"]=transitions_fly["couve face"]
+	transitions_echauf	["fly"]=transitions_fly["couve face"]
 
 	# -> repas
 	transitions_absent	["repas"]=["Miam ! Regardez ce que je vous ai ramenez ! #bot",
@@ -150,6 +162,18 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions_couve_dos	["repas"]=transitions_absent["repas"]
 	transitions_nuit	["repas"]=transitions_absent["repas"]
 	transitions_fly		["repas"]=transitions_absent["repas"]
+	transitions_echauf	["repas"]=transitions_absent["repas"]
+
+	# -> echauf
+	transitions_absent	["echauf"]=["On a bien grandi regardez nos petites ailes #bot",
+					    "On sort les muscles ! #bot",
+					    "On s'échauffe, bientôt le saut dans l'inconnu ... #bot"]
+	transitions_couve_face	["echauf"]=transitions_absent	["echauf"]
+	transitions_couve_dos	["echauf"]=transitions_absent	["echauf"]
+	transitions_nuit	["echauf"]=transitions_absent	["echauf"]
+	transitions_repas	["echauf"]=transitions_absent	["echauf"]
+	transitions_fly		["echauf"]=transitions_absent	["echauf"]
+
 
 	#transitions
 	transitions["absent"]=transitions_absent
@@ -158,6 +182,7 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 	transitions["couve dos"]=transitions_couve_dos
 	transitions["repas"]=transitions_repas
 	transitions["fly"]=transitions_fly
+	transitions["echauf"]=transitions_echauf
 
 	random.seed(datetime.now())
 	#recherche dans les transitions le nouveau tweet à envoyer
@@ -173,4 +198,3 @@ if (last_status == "status inconnu ...") or (last_status != current_status):
 #fermeture fichier de log
 fichier_log.write("End script at %r\n" % time.strftime('%d/%m/%y %H:%M:%S',time.localtime()))
 fichier_log.write("-------------------------\n")
-
